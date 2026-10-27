@@ -1,0 +1,179 @@
+// Haven & Hue — Home Decor Affiliate Website
+// Prisma schema (SQLite). See README.md for switching to Postgres in production.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Admin & sessions
+// ---------------------------------------------------------------------------
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  sessions     Session[]
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique // sha256 of the raw session token (raw token lives only in the HttpOnly cookie)
+  userId    String
+  user      AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  ip        String?
+  userAgent String?
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Catalog
+// ---------------------------------------------------------------------------
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  image       String?
+  imageAlt    String?
+  featured    Boolean   @default(false)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+}
+
+model Product {
+  id               String    @id @default(cuid())
+  title            String
+  slug             String    @unique
+  shortDescription String?
+  description      String    @default("")
+  // JSON-encoded string arrays (Prisma/SQLite cannot store native lists)
+  images           String    @default("[]")
+  pinterestImage   String?
+  imageAlt         String?
+  categoryId       String?
+  category         Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategory      String?
+  amazonUrl        String
+  asin             String?
+  // Optional display price. Only fill this in when you have a permitted,
+  // reliable source for it. Leave empty otherwise (see README / Amazon Associates rules).
+  price            String?
+  features         String    @default("[]")
+  pros             String    @default("[]")
+  cons             String    @default("[]")
+  featured         Boolean   @default(false)
+  status           String    @default("DRAFT") // DRAFT | PUBLISHED
+  seoTitle         String?
+  seoDescription   String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  publishedAt      DateTime?
+
+  @@index([status])
+  @@index([categoryId])
+}
+
+// ---------------------------------------------------------------------------
+// Blog
+// ---------------------------------------------------------------------------
+
+model Post {
+  id             String    @id @default(cuid())
+  title          String
+  slug           String    @unique
+  excerpt        String    @default("")
+  content        String    @default("") // Markdown
+  featuredImage  String?
+  imageAlt       String?
+  pinterestImage String?
+  category       String    @default("Decor Ideas")
+  tags           String    @default("[]") // JSON string array
+  author         String    @default("Editorial Team")
+  status         String    @default("DRAFT") // DRAFT | PUBLISHED
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  publishedAt    DateTime?
+
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Site settings (single row, id = "main")
+// ---------------------------------------------------------------------------
+
+model Setting {
+  id                    String   @id @default("main")
+  siteName              String   @default("Haven & Hue")
+  tagline               String   @default("Curated home decor finds & styling ideas")
+  logoUrl               String?
+  siteDescription       String   @default("Discover hand-picked home decor, styling ideas, and cozy inspiration for every room.")
+  contactEmail          String   @default("hello@havenandhue.com")
+  siteUrl               String   @default("")
+  pinterestUrl          String   @default("")
+  instagramUrl          String   @default("")
+  facebookUrl           String   @default("")
+  xTwitterUrl           String   @default("")
+  amazonTrackingId      String   @default("")
+  affiliateRel          String   @default("sponsored nofollow noopener noreferrer")
+  affiliateNewTab       Boolean  @default(true)
+  affiliateDisclosure   String   @default("As an Amazon Associate I earn from qualifying purchases.")
+  defaultSeoTitle       String   @default("Haven & Hue — Curated Home Decor Finds & Styling Ideas")
+  defaultSeoDescription String   @default("Hand-picked home decor finds, styling guides, and cozy inspiration for your living room, bedroom, and beyond.")
+  footerText            String   @default("Honest decor finds and styling ideas to help you create a home you love.")
+  heroHeading           String   @default("Discover Stylish Home Decor You'll Love")
+  heroSubheading        String   @default("Hand-picked decor finds, styling ideas, and inspiration to turn every room into your favorite corner of home.")
+  heroImage             String   @default("")
+  newsletterEnabled     Boolean  @default(true)
+  updatedAt             DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Contact inbox & newsletter
+// ---------------------------------------------------------------------------
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Media library
+// ---------------------------------------------------------------------------
+
+model Media {
+  id        String   @id @default(cuid())
+  filename  String
+  url       String   @unique
+  mimeType  String
+  size      Int
+  alt       String?
+  createdAt DateTime @default(now())
+}
