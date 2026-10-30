@@ -149,16 +149,15 @@ bun run dev        # http://localhost:3000
 ## 9. Deployment
 
 ### Recommended: Vercel + managed Postgres
-SQLite is perfect locally, but serverless platforms need a network database. The schema is portable:
+The schema ships targeting **PostgreSQL** (serverless platforms have no persistent disk, so SQLite is sandbox-only). Deploy takes ~5 minutes:
 
-1. Create a free Postgres database (Neon, Supabase, or Vercel Postgres — all have free tiers).
-2. In `prisma/schema.prisma` change `provider = "sqlite"` → `provider = "postgres"`.
-3. Set `DATABASE_URL` to your Postgres connection string in the host's env vars.
-4. Run `bunx prisma db push` (once, from your machine or CI) and `bun scripts/seed.ts` if you want the demo content.
-5. Deploy the repo to Vercel. Set env vars: `DATABASE_URL`, `NEXT_PUBLIC_SITE_URL`, and optionally `ADMIN_*`, `RESEND_API_KEY`.
-6. Visit `/admin/setup` on your live domain to create the production admin.
+1. Create a free Postgres database (Supabase, Neon, or Vercel Postgres — all have free tiers).
+2. In Vercel → Project → **Settings → Environment Variables** add `DATABASE_URL` = your Postgres connection string (for Supabase use the **Connection pooler** string on port `6543`, append `?pgbouncer=true&connect_timeout=15`).
+3. From your machine, run `DATABASE_URL="<direct-string>" bunx prisma db push` once to create the tables (use Supabase's **direct** port-5432 string for this), then `bun scripts/seed.ts` for the demo content (it prints a random admin password if `ADMIN_PASSWORD` is unset — or set your own first).
+4. Deploy the repo to Vercel (env vars: `DATABASE_URL`; optionally `NEXT_PUBLIC_SITE_URL`, `RESEND_API_KEY`).
+5. Visit `/admin` on your live domain, sign in, and **change the password immediately**.
 
-> **Alternative:** deploy to Railway / Render / Fly.io with a persistent volume to keep SQLite (set `DATABASE_URL=file:/data/app.db`). This avoids the database switch entirely.
+> **Alternative:** deploy to Railway / Render / Fly.io with a persistent volume to keep SQLite (swap `provider` back to `"sqlite"` in `prisma/schema.prisma` and set `DATABASE_URL=file:/data/app.db`).
 
 ### Connecting your domain
 1. Buy the domain at any registrar (Namecheap, Cloudflare, Porkbun…).

@@ -1,12 +1,14 @@
 // Haven & Hue — Home Decor Affiliate Website
-// Prisma schema (SQLite). See README.md for switching to Postgres in production.
+// Prisma schema (PostgreSQL for production — Supabase/Neon/Vercel Postgres).
+// Sandbox tip: for a throwaway local SQLite instance use the git history
+// (provider "sqlite") — production deployment targets Postgres only.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

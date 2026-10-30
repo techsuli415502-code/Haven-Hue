@@ -58,3 +58,4 @@ db/*.sqlite*
 /upload/
 /download/
 /worklog.md
+*.pid
