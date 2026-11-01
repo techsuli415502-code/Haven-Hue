@@ -59,3 +59,4 @@ db/*.sqlite*
 /download/
 /worklog.md
 *.pid
+.pgtest*
