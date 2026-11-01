@@ -1,4 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "prisma generate && next build"
+  "buildCommand": "prisma generate && (prisma db push --skip-generate && npx tsx scripts/seed.ts || echo '[build] WARNING: database setup skipped (DATABASE_URL missing or unreachable). Connect a Postgres database in Vercel → Storage → Create Database, then redeploy.') && next build"
 }
