@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import { Toaster } from "sonner";
-import { getSettings } from "@/lib/settings";
+import { getSettings, siteBaseUrl } from "@/lib/settings";
 import "./globals.css";
 
 const inter = Inter({
@@ -19,10 +19,9 @@ const fraunces = Fraunces({
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
-  const siteUrl =
-    settings.siteUrl.trim() ||
-    (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim() ||
-    "http://localhost:3000";
+  // Same resolution as sitemap/robots/canonical links (DB setting → env →
+  // Vercel system variables) so og:url never leaks a localhost fallback.
+  const siteUrl = siteBaseUrl(settings);
 
   return {
     metadataBase: new URL(siteUrl),

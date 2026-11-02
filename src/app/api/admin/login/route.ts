@@ -68,7 +68,21 @@ export async function POST(req: Request) {
       const creds = envAdminCredentials();
       return ok({ admin: { name: creds?.name ?? "Site Admin", email }, demoSession: true });
     }
-    return fail(503, "The database is not connected yet. Log in with the ADMIN_EMAIL / ADMIN_PASSWORD environment variables, or connect the database in Vercel (Storage → Create Database) and redeploy.");
+
+    // Distinguish the two failure modes so the owner is never misled:
+    if (!envAdminCredentials()) {
+      // No ADMIN_EMAIL / ADMIN_PASSWORD configured on this deployment at all.
+      return fail(
+        503,
+        "One-time setup needed: the database is not connected and no admin environment variables are configured on this deployment.",
+        { setupRequired: true },
+      );
+    }
+    // Env credentials exist, but what was typed doesn't match them.
+    return fail(
+      401,
+      "Incorrect email or password. This deployment signs in with the ADMIN_EMAIL / ADMIN_PASSWORD environment variables — if you changed them in Vercel (Settings → Environment Variables) you must redeploy first, then sign in with those exact values.",
+    );
   }
 
   return fail(401, "Incorrect email or password.");

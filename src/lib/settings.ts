@@ -59,11 +59,27 @@ export async function getSettings(): Promise<Setting> {
   }
 }
 
-/** Resolve the public base URL used for canonical URLs, sitemap and Open Graph. */
+/**
+ * Resolve the public base URL used for canonical URLs, sitemap and Open Graph.
+ *
+ * Order: admin DB setting → NEXT_PUBLIC_SITE_URL → Vercel's automatic
+ * VERCEL_PROJECT_PRODUCTION_URL → per-deployment VERCEL_URL → localhost
+ * (local dev only). The Vercel variables are system-injected, so canonical
+ * URLs, the sitemap and og:url point at the real domain with zero config.
+ */
 export function siteBaseUrl(settings: { siteUrl: string }): string {
-  const fromSettings = settings.siteUrl.trim();
-  const fromEnv = (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim();
-  return (fromSettings || fromEnv || "http://localhost:3000").replace(/\/+$/, "");
+  const candidates = [
+    settings.siteUrl.trim(),
+    (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim(),
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "").trim(),
+    (process.env.VERCEL_URL ?? "").trim(),
+  ];
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const withProtocol = /^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`;
+    return withProtocol.replace(/\/+$/, "");
+  }
+  return "http://localhost:3000";
 }
 
 /** Split an SEO title template: "%s | Site Name". */

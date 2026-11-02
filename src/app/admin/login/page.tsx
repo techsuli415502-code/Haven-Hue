@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { KeyRound, Loader2, Lock, ShieldCheck } from "lucide-react";
+import { KeyRound, Loader2, Lock, ShieldCheck, TriangleAlert } from "lucide-react";
 import { LogoMark } from "@/components/site/logo-mark";
 
 export default function AdminLoginPage() {
@@ -12,6 +12,7 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [state, setState] = useState<"idle" | "loading">("idle");
   const [error, setError] = useState("");
+  const [setupNeeded, setSetupNeeded] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +31,7 @@ export default function AdminLoginPage() {
         router.refresh();
       } else {
         setState("idle");
+        setSetupNeeded(Boolean(data.setupRequired));
         setError(data.error ?? "Sign in failed. Please try again.");
       }
     } catch {
@@ -91,6 +93,33 @@ export default function AdminLoginPage() {
               <p role="alert" className="rounded-lg bg-terracotta-soft px-4 py-3 text-sm text-destructive">
                 {error}
               </p>
+            )}
+
+            {setupNeeded && (
+              <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm">
+                <p className="flex items-center gap-2 font-semibold text-amber-900">
+                  <TriangleAlert className="h-4 w-4" aria-hidden="true" />
+                  One-time setup required
+                </p>
+                <ol className="mt-2 list-decimal space-y-1 pl-5 text-[13px] leading-5 text-amber-900/90">
+                  <li>
+                    Open{" "}
+                    <a
+                      href="https://vercel.com/dashboard"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium underline underline-offset-2"
+                    >
+                      vercel.com/dashboard
+                    </a>{" "}
+                    and open your Haven-Hue project.
+                  </li>
+                  <li>Go to Settings → Environment Variables.</li>
+                  <li>Add ADMIN_EMAIL and ADMIN_PASSWORD with values you will remember — save each one.</li>
+                  <li>Deployments → Redeploy (env vars only take effect on a new deployment).</li>
+                  <li>Sign in here with those exact values.</li>
+                </ol>
+              </div>
             )}
 
             <button type="submit" disabled={state === "loading"} className="btn-sage w-full py-3">
