@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { db } from "@/lib/db";
+import { getAllCategoriesWithCounts } from "@/lib/content";
 import { CategoryCard } from "@/components/site/category-card";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
 
@@ -13,10 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CategoriesPage() {
-  const categories = await db.category.findMany({
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    include: { _count: { select: { products: { where: { status: "PUBLISHED" } } } } },
-  });
+  const categories = await getAllCategoriesWithCounts();
 
   return (
     <div className="container-page py-10 lg:py-14">

@@ -16,6 +16,57 @@ import { db } from "@/lib/db";
 export const SESSION_COOKIE = "hh_admin_session";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+/**
+ * Fallback authentication for when the database is not connected yet.
+ *
+ * A fresh Vercel project has no database until "Storage → Create Database"
+ * is clicked, which would lock the owner out of /admin entirely. When the
+ * ADMIN_EMAIL and ADMIN_PASSWORD environment variables are set, login falls
+ * back to validating against them and issues a signed, database-free session
+ * cookie (HMAC-SHA256 over the email, keyed with the password). Admin WRITE
+ * operations still require a real database — this only unlocks viewing.
+ */
+const ENV_TOKEN_PREFIX = "env1.";
+
+export function envAdminCredentials(): { email: string; name: string } | null {
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD?.trim();
+  if (!email || !password) return null;
+  return { email, name: process.env.ADMIN_NAME?.trim() || "Site Admin" };
+}
+
+function envSessionToken(email: string): string {
+  const secret = process.env.ADMIN_PASSWORD?.trim() ?? "";
+  return ENV_TOKEN_PREFIX + crypto.createHmac("sha256", secret).update(`admin:${email}`).digest("base64url");
+}
+
+export async function verifyEnvAdmin(email: string, password: string): Promise<boolean> {
+  const creds = envAdminCredentials();
+  if (!creds) return false;
+  const emailOk = timingSafeEqualStr(email.trim().toLowerCase(), creds.email);
+  const passwordOk = timingSafeEqualStr(password, process.env.ADMIN_PASSWORD?.trim() ?? "");
+  return emailOk && passwordOk;
+}
+
+function timingSafeEqualStr(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
+}
+
+/** Issue a database-free session cookie (used only when the DB is unavailable). */
+export async function createEnvSession(email: string): Promise<void> {
+  const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+  const store = await cookies();
+  store.set(SESSION_COOKIE, envSessionToken(email), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    expires: expiresAt,
+  });
+}
+
 export type AdminSessionUser = {
   id: string;
   email: string;
@@ -69,6 +120,26 @@ export async function getSessionUser(): Promise<AdminSessionUser | null> {
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
+  // Database-free env session (only issued when the database is unavailable).
+  if (token.startsWith(ENV_TOKEN_PREFIX)) {
+    const creds = envAdminCredentials();
+    if (!creds) return null;
+    const expected = envSessionToken(creds.email);
+    if (timingSafeEqualStr(token, expected)) {
+      return { id: "env-admin", email: creds.email, name: creds.name };
+    }
+    return null;
+  }
+
+  try {
+    return await getSessionUserFromDb(token);
+  } catch {
+    // Database unavailable (not configured, unreachable, migrating…).
+    return null;
+  }
+}
+
+async function getSessionUserFromDb(token: string): Promise<AdminSessionUser | null> {
   const session = await db.session.findUnique({
     where: { tokenHash: sha256(token) },
     include: { user: true },

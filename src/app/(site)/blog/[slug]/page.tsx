@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { CalendarDays, Clock, User } from "lucide-react";
-import { db } from "@/lib/db";
+import { getPostBySlug, getRelatedPosts } from "@/lib/content";
 import { getSettings, siteBaseUrl } from "@/lib/settings";
 import { getSessionUser } from "@/lib/auth";
 import { renderMarkdown, extractToc, readingTimeMinutes } from "@/lib/markdown";
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 type Params = Promise<{ slug: string }>;
 
 async function getPost(slug: string) {
-  return db.post.findUnique({ where: { slug } });
+  return getPostBySlug(slug);
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
@@ -76,11 +76,7 @@ export default async function BlogPostPage({ params }: { params: Params }) {
   const { html, toc } = extractToc(rendered);
   const showToc = toc.length >= 3;
 
-  const related = await db.post.findMany({
-    where: { status: "PUBLISHED", category: post.category, id: { not: post.id } },
-    take: 3,
-    orderBy: { publishedAt: "desc" },
-  });
+  const related = await getRelatedPosts(post.category, post.id, 3);
 
   const canonicalUrl = `${baseUrl}/blog/${post.slug}`;
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles, ThumbsUp, BookOpen } from "lucide-react";
-import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { getFeaturedCategories, getHomeProducts, getLatestPosts } from "@/lib/content";
 import { ProductCard } from "@/components/site/product-card";
 import { CategoryCard } from "@/components/site/category-card";
 import { PostCard } from "@/components/site/post-card";
@@ -14,30 +14,10 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const settings = await getSettings();
 
-  const [featuredCategories, featuredProducts, latestProducts, latestPosts] = await Promise.all([
-    db.category.findMany({
-      where: { featured: true },
-      orderBy: [{ sortOrder: "asc" }],
-      take: 6,
-      include: { _count: { select: { products: { where: { status: "PUBLISHED" } } } } },
-    }),
-    db.product.findMany({
-      where: { status: "PUBLISHED", featured: true },
-      orderBy: { updatedAt: "desc" },
-      take: 4,
-      include: { category: true },
-    }),
-    db.product.findMany({
-      where: { status: "PUBLISHED" },
-      orderBy: { publishedAt: "desc" },
-      take: 8,
-      include: { category: true },
-    }),
-    db.post.findMany({
-      where: { status: "PUBLISHED" },
-      orderBy: { publishedAt: "desc" },
-      take: 3,
-    }),
+  const { featured: featuredProducts, latest: latestProducts } = await getHomeProducts();
+  const [featuredCategories, latestPosts] = await Promise.all([
+    getFeaturedCategories(6),
+    getLatestPosts(3),
   ]);
 
   const products = featuredProducts.length >= 4 ? featuredProducts : latestProducts.slice(0, 4);

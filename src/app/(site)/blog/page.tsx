@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { db } from "@/lib/db";
+import { getBlogPosts } from "@/lib/content";
 import { PostCard } from "@/components/site/post-card";
 import { Pagination } from "@/components/site/pagination";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
@@ -22,40 +22,9 @@ export default async function BlogPage({ searchParams }: { searchParams: SearchP
   const { page = "1", tag } = await searchParams;
   const currentPage = Math.max(1, parseInt(page, 10) || 1);
 
-  const where = {
-    status: "PUBLISHED" as const,
-    ...(tag ? { tags: { contains: tag } } : {}),
-  };
-
-  const [totalCount, posts] = await Promise.all([
-    db.post.count({ where }),
-    db.post.findMany({
-      where,
-      orderBy: { publishedAt: "desc" },
-      take: PAGE_SIZE,
-      skip: (currentPage - 1) * PAGE_SIZE,
-    }),
-  ]);
+  const { totalCount, posts, popularTags } = await getBlogPosts({ page, tag, pageSize: PAGE_SIZE });
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-
-  // Popular tags across published posts
-  const published = await db.post.findMany({ where: { status: "PUBLISHED" }, select: { tags: true } });
-  const tagCounts = new Map<string, number>();
-  for (const p of published) {
-    try {
-      const tags = JSON.parse(p.tags);
-      if (Array.isArray(tags)) {
-        for (const t of tags) {
-          const key = String(t);
-          tagCounts.set(key, (tagCounts.get(key) ?? 0) + 1);
-        }
-      }
-    } catch {
-      // ignore malformed tags
-    }
-  }
-  const popularTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
 
   return (
     <div className="container-page py-10 lg:py-14">

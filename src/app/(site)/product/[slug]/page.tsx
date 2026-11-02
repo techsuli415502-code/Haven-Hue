@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Check, Info, Minus, Plus } from "lucide-react";
 import Link from "next/link";
-import { db } from "@/lib/db";
 import { getSettings, siteBaseUrl } from "@/lib/settings";
+import { getProductBySlug, getRelatedProducts } from "@/lib/content";
 import { getSessionUser } from "@/lib/auth";
 import { parseList, truncate } from "@/lib/data";
 import { buildAffiliateUrl, affiliateRel } from "@/lib/affiliate";
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 type Params = Promise<{ slug: string }>;
 
 async function getProduct(slug: string) {
-  return db.product.findUnique({ where: { slug }, include: { category: true } });
+  return getProductBySlug(slug);
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
@@ -74,12 +74,7 @@ export default async function ProductPage({ params }: { params: Params }) {
   const baseUrl = siteBaseUrl(settings);
 
   const related = product.categoryId
-    ? await db.product.findMany({
-        where: { status: "PUBLISHED", categoryId: product.categoryId, id: { not: product.id } },
-        include: { category: true },
-        take: 4,
-        orderBy: { publishedAt: "desc" },
-      })
+    ? await getRelatedProducts(product.categoryId, product.id, 4)
     : [];
 
   const canonicalUrl = `${baseUrl}/product/${product.slug}`;

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { SearchX } from "lucide-react";
 import Link from "next/link";
-import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { getShopCategories, getShopProducts } from "@/lib/content";
 import { ProductCard } from "@/components/site/product-card";
 import { Pagination } from "@/components/site/pagination";
 import { ShopSearchSort, CategoryChips } from "@/components/site/shop-controls";
@@ -26,46 +26,11 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
   const { q, category, sort = "newest", page = "1" } = await searchParams;
   const settings = await getSettings();
 
-  const categories = await db.category.findMany({
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    select: { slug: true, name: true },
-  });
-
-  const where = {
-    status: "PUBLISHED" as const,
-    ...(category ? { category: { is: { slug: category } } } : {}),
-    ...(q
-      ? {
-          OR: [
-            { title: { contains: q } },
-            { shortDescription: { contains: q } },
-            { description: { contains: q } },
-          ],
-        }
-      : {}),
-  };
-
-  const orderBy =
-    sort === "featured"
-      ? [{ featured: "desc" as const }, { publishedAt: "desc" as const }]
-      : sort === "title-asc"
-        ? [{ title: "asc" as const }]
-        : sort === "title-desc"
-          ? [{ title: "desc" as const }]
-          : [{ publishedAt: "desc" as const }, { createdAt: "desc" as const }];
+  const categories = await getShopCategories();
 
   const currentPage = Math.max(1, parseInt(page, 10) || 1);
 
-  const [totalCount, products] = await Promise.all([
-    db.product.count({ where }),
-    db.product.findMany({
-      where,
-      orderBy,
-      include: { category: true },
-      take: PAGE_SIZE,
-      skip: (currentPage - 1) * PAGE_SIZE,
-    }),
-  ]);
+  const { totalCount, products } = await getShopProducts({ q, category, sort, page, pageSize: PAGE_SIZE });
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const start = totalCount === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;

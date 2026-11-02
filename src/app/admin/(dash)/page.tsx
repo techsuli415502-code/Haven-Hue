@@ -1,15 +1,26 @@
 import Link from "next/link";
-import { ArrowRight, Lightbulb, Package, PenSquare, Shapes, Inbox, Plus, Eye, Trash2 } from "lucide-react";
+import { ArrowRight, Lightbulb, Package, PenSquare, Shapes, Inbox, Plus, TriangleAlert } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { isDatabaseUp } from "@/lib/content";
 import { formatDateTime } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Dashboard" };
 
+/** Never let one failed count crash the whole dashboard. */
+async function safe<T>(promise: Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await promise;
+  } catch {
+    return fallback;
+  }
+}
+
 export default async function AdminDashboardPage() {
   const settings = await getSettings();
+  const dbUp = await isDatabaseUp();
 
   const [
     publishedProducts,
@@ -23,16 +34,16 @@ export default async function AdminDashboardPage() {
     recentProducts,
     recentPosts,
   ] = await Promise.all([
-    db.product.count({ where: { status: "PUBLISHED" } }),
-    db.product.count({ where: { status: "DRAFT" } }),
-    db.product.count({ where: { status: "PUBLISHED", featured: true } }),
-    db.post.count({ where: { status: "PUBLISHED" } }),
-    db.post.count({ where: { status: "DRAFT" } }),
-    db.category.count(),
-    db.contactMessage.count({ where: { read: false } }),
-    db.subscriber.count(),
-    db.product.findMany({ orderBy: { updatedAt: "desc" }, take: 5, include: { category: true } }),
-    db.post.findMany({ orderBy: { updatedAt: "desc" }, take: 5 }),
+    safe(db.product.count({ where: { status: "PUBLISHED" } }), 0),
+    safe(db.product.count({ where: { status: "DRAFT" } }), 0),
+    safe(db.product.count({ where: { status: "PUBLISHED", featured: true } }), 0),
+    safe(db.post.count({ where: { status: "PUBLISHED" } }), 0),
+    safe(db.post.count({ where: { status: "DRAFT" } }), 0),
+    safe(db.category.count(), 0),
+    safe(db.contactMessage.count({ where: { read: false } }), 0),
+    safe(db.subscriber.count(), 0),
+    safe(db.product.findMany({ orderBy: { updatedAt: "desc" }, take: 5, include: { category: true } }), []),
+    safe(db.post.findMany({ orderBy: { updatedAt: "desc" }, take: 5 }), []),
   ]);
 
   const stats = [
@@ -46,6 +57,16 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
+      {!dbUp && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-900" role="status">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <p>
+            <strong>Database not connected.</strong> You are logged in with environment credentials and can look
+            around, but products, posts and settings cannot be read or saved yet. On Vercel: <strong>Storage →
+            Create Database → Postgres → Connect</strong>, then redeploy — the catalog fills in automatically.
+          </p>
+        </div>
+      )}
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Dashboard</h1>

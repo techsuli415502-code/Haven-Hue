@@ -1,7 +1,13 @@
 import { ok, fail, originChecked, getClientIp, readJson, zodMessage } from "@/lib/admin-guard";
 import { db } from "@/lib/db";
 import { rateLimit } from "@/lib/rate-limit";
-import { verifyPassword, createSession } from "@/lib/auth";
+import {
+  verifyPassword,
+  createSession,
+  verifyEnvAdmin,
+  createEnvSession,
+  envAdminCredentials,
+} from "@/lib/auth";
 import { loginSchema } from "@/lib/validators";
 
 /**
@@ -31,20 +37,39 @@ export async function POST(req: Request) {
     return fail(429, `Too many login attempts. Please try again in ${wait} seconds.`);
   }
 
-  const admin = await db.adminUser.findUnique({ where: { email } });
-  if (!admin) {
-    return fail(401, "Incorrect email or password.");
+  // Try the database first. If the database is not connected yet (fresh Vercel
+  // project before Storage → Create Database), fall back to the ADMIN_EMAIL /
+  // ADMIN_PASSWORD environment credentials so the owner is never locked out.
+  let admin: { id: string; name: string; email: string; passwordHash: string } | null = null;
+  let dbUnavailable = false;
+  try {
+    admin = await db.adminUser.findUnique({ where: { email } });
+  } catch {
+    dbUnavailable = true;
   }
 
-  const valid = await verifyPassword(password, admin.passwordHash);
-  if (!valid) {
-    return fail(401, "Incorrect email or password.");
+  if (admin) {
+    const valid = await verifyPassword(password, admin.passwordHash);
+    if (!valid) {
+      return fail(401, "Incorrect email or password.");
+    }
+
+    await createSession(admin.id, {
+      ip,
+      userAgent: req.headers.get("user-agent"),
+    });
+
+    return ok({ admin: { name: admin.name, email: admin.email } });
   }
 
-  await createSession(admin.id, {
-    ip,
-    userAgent: req.headers.get("user-agent"),
-  });
+  if (dbUnavailable) {
+    if (await verifyEnvAdmin(email, password)) {
+      await createEnvSession(email);
+      const creds = envAdminCredentials();
+      return ok({ admin: { name: creds?.name ?? "Site Admin", email }, demoSession: true });
+    }
+    return fail(503, "The database is not connected yet. Log in with the ADMIN_EMAIL / ADMIN_PASSWORD environment variables, or connect the database in Vercel (Storage → Create Database) and redeploy.");
+  }
 
-  return ok({ admin: { name: admin.name, email: admin.email } });
+  return fail(401, "Incorrect email or password.");
 }

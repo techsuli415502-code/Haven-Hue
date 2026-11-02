@@ -30,9 +30,15 @@ export async function POST(req: Request) {
 
   const { name, email, subject, message } = parsed.data;
 
-  const saved = await db.contactMessage.create({
-    data: { name, email, subject, message },
-  });
+  let savedId: string;
+  try {
+    const saved = await db.contactMessage.create({
+      data: { name, email, subject, message },
+    });
+    savedId = saved.id;
+  } catch {
+    return fail(503, "The contact form needs the site database, which is not connected yet. Please reach us through the contact details on the About page, or try again later.");
+  }
 
   // Optional email delivery via Resend when an API key is configured.
   let emailNote = "";
@@ -51,7 +57,7 @@ export async function POST(req: Request) {
           to: settings.contactEmail,
           reply_to: email,
           subject: `[Contact] ${subject}`,
-          text: `From: ${name} <${email}>\n\n${message}\n\n(message id ${saved.id})`,
+          text: `From: ${name} <${email}>\n\n${message}\n\n(message id ${savedId})`,
         }),
       });
       if (res.ok) emailNote = " An email notification has been sent to the site owner.";

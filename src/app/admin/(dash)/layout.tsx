@@ -18,7 +18,12 @@ export default async function AdminDashLayout({ children }: { children: React.Re
   }
 
   const settings = await getSettings();
-  const unreadCount = await db.contactMessage.count({ where: { read: false } });
+  let unreadCount = 0;
+  try {
+    unreadCount = await db.contactMessage.count({ where: { read: false } });
+  } catch {
+    // Database not connected — the dashboard page shows a setup banner.
+  }
 
   return (
     <AdminShell user={user} siteName={settings.siteName} unreadCount={unreadCount}>

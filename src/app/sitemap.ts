@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
-import { db } from "@/lib/db";
 import { getSettings, siteBaseUrl } from "@/lib/settings";
+import { getSitemapEntries } from "@/lib/content";
 
 export const dynamic = "force-dynamic";
 
@@ -25,17 +25,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/cookie-policy`, changeFrequency: "yearly", priority: 0.3 },
   ];
 
-  const [categories, products, posts] = await Promise.all([
-    db.category.findMany({ select: { slug: true, updatedAt: true } }),
-    db.product.findMany({
-      where: { status: "PUBLISHED" },
-      select: { slug: true, updatedAt: true },
-    }),
-    db.post.findMany({
-      where: { status: "PUBLISHED" },
-      select: { slug: true, updatedAt: true },
-    }),
-  ]);
+  const { categories, products, posts } = await getSitemapEntries();
 
   return [
     ...staticRoutes,

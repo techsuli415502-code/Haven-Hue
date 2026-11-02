@@ -32,10 +32,14 @@ export async function POST(req: Request) {
 
   const email = parsed.data.email;
 
-  const existing = await db.subscriber.findUnique({ where: { email } });
-  if (!existing) {
-    await db.subscriber.create({ data: { email } });
-    return ok({ message: "You're on the list! Fresh decor ideas will land in your inbox soon." });
+  try {
+    const existing = await db.subscriber.findUnique({ where: { email } });
+    if (!existing) {
+      await db.subscriber.create({ data: { email } });
+      return ok({ message: "You're on the list! Fresh decor ideas will land in your inbox soon." });
+    }
+  } catch {
+    return fail(503, "Subscriptions need the site database, which is not connected yet. Please try again after the site owner connects the database.");
   }
 
   return ok({ message: "You're already subscribed — no need to sign up twice. Happy decorating!" });

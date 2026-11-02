@@ -2,20 +2,19 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SearchX } from "lucide-react";
 import Link from "next/link";
-import { db } from "@/lib/db";
-import { getSettings } from "@/lib/settings";
+import { getSettings, siteBaseUrl } from "@/lib/settings";
+import { getCategoryBySlug, getProductsByCategory } from "@/lib/content";
 import { getSessionUser } from "@/lib/auth";
 import { ProductCard } from "@/components/site/product-card";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
 import { JsonLd } from "@/components/site/json-ld";
-import { siteBaseUrl } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
 type Params = Promise<{ slug: string }>;
 
 async function getCategory(slug: string) {
-  return db.category.findUnique({ where: { slug } });
+  return getCategoryBySlug(slug);
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
@@ -46,11 +45,7 @@ export default async function CategoryPage({ params }: { params: Params }) {
   const admin = await getSessionUser();
   const baseUrl = siteBaseUrl(settings);
 
-  const products = await db.product.findMany({
-    where: { status: "PUBLISHED", categoryId: category.id },
-    orderBy: [{ featured: "desc" }, { publishedAt: "desc" }],
-    include: { category: true },
-  });
+  const products = await getProductsByCategory(category.id);
 
   return (
     <>

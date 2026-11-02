@@ -1,5 +1,5 @@
 import { getSettings } from "@/lib/settings";
-import { db } from "@/lib/db";
+import { getFooterCategories } from "@/lib/content";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 
@@ -7,10 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSettings();
-  const categories = await db.category.findMany({
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    select: { slug: true, name: true },
-  });
+  const categories = await getFooterCategories();
 
   return (
     <div className="flex min-h-screen flex-col">
