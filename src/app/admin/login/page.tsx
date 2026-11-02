@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Home, Loader2, Lock, ShieldCheck } from "lucide-react";
+import { KeyRound, Loader2, Lock, ShieldCheck } from "lucide-react";
+import { LogoMark } from "@/components/site/logo-mark";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -44,10 +45,9 @@ export default function AdminLoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-sand px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-6 flex flex-col items-center text-center">
-          <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-sage text-white">
-            <Home className="h-5 w-5" aria-hidden="true" />
-          </span>
-          <h1 className="font-display text-2xl font-semibold">Admin Sign In</h1>
+          <LogoMark className="mb-3 h-14 w-14 drop-shadow-[0_6px_16px_rgba(78,92,68,0.35)]" />
+          <p className="font-display text-base font-semibold tracking-wide text-sage-deep">Haven &amp; Hue</p>
+          <h1 className="mt-0.5 font-display text-2xl font-semibold">Admin Sign In</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Protected area — authorized administrators only.
           </p>
@@ -113,6 +113,14 @@ export default function AdminLoginPage() {
               <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage" aria-hidden="true" />
               Login attempts are rate-limited. Sessions are stored in secure HTTP-only cookies and expire after
               7 days. Public visitors cannot create admin accounts.
+            </p>
+            <p className="mt-2.5 flex items-start gap-2 text-xs leading-5 text-muted-foreground">
+              <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0 text-terracotta" aria-hidden="true" />
+              <span>
+                Forgot the password? Set <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">ADMIN_EMAIL</code> and{" "}
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">ADMIN_PASSWORD</code> in your hosting
+                dashboard (Vercel → Settings → Environment Variables), redeploy, then sign in with those values.
+              </span>
             </p>
           </div>
         </div>
