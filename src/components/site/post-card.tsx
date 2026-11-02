@@ -19,13 +19,13 @@ export function PostCard({
   priority?: boolean;
 }) {
   return (
-    <article className="group flex flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-[0_1px_2px_rgba(46,43,38,0.04)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(46,43,38,0.10)]">
+    <article className="group flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-[0_1px_2px_rgba(46,43,38,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-sage/30 hover:shadow-[0_20px_44px_-16px_rgba(46,43,38,0.22)]">
       <Link href={`/blog/${post.slug}`} className="relative block aspect-[16/10] overflow-hidden bg-secondary" aria-label={post.title}>
         <SmartImage
           src={post.featuredImage}
           alt={post.imageAlt || post.title}
           priority={priority}
-          className="transition-transform duration-500 group-hover:scale-[1.04]"
+          className="transition-transform duration-700 ease-out group-hover:scale-[1.06]"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
         {post.category && (

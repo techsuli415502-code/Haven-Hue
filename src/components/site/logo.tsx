@@ -1,7 +1,13 @@
 import Link from "next/link";
-import { Home } from "lucide-react";
+import { LogoMark } from "./logo-mark";
 import { cn } from "@/lib/utils";
 
+/**
+ * Brand lockup: logo mark + wordmark.
+ * The ampersand is rendered in italic terracotta — a small editorial flourish
+ * that echoes the "hue" in the brand name. A custom logoUrl (set in admin
+ * Settings) always wins over the built-in mark.
+ */
 export function Logo({
   siteName,
   logoUrl,
@@ -13,29 +19,38 @@ export function Logo({
   className?: string;
   variant?: "default" | "light";
 }) {
+  const segments = siteName.split(" & ");
+
   return (
-    <Link href="/" className={cn("flex items-center gap-2.5", className)} aria-label={`${siteName} — home`}>
+    <Link href="/" className={cn("group flex items-center gap-2.5", className)} aria-label={`${siteName} — home`}>
       {logoUrl ? (
-        <span className="relative block h-9 w-9 overflow-hidden rounded-full">
+        <span className="relative block h-9 w-9 overflow-hidden rounded-full ring-1 ring-border/60 transition-transform duration-300 group-hover:scale-105">
           <img src={logoUrl} alt={`${siteName} logo`} className="h-full w-full object-cover" />
         </span>
       ) : (
-        <span
-          className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-full",
-            variant === "light" ? "bg-white/15 text-white" : "bg-sage text-white",
-          )}
-        >
-          <Home className="h-4.5 w-4.5" strokeWidth={1.75} aria-hidden="true" />
+        <span className="transition-transform duration-300 group-hover:scale-105">
+          <LogoMark
+            className={variant === "light" ? "h-9 w-9 drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]" : "h-9 w-9"}
+          />
         </span>
       )}
       <span
         className={cn(
-          "font-display text-xl font-semibold tracking-tight",
-          variant === "light" ? "text-white" : "text-foreground",
+          "font-display text-[1.35rem] font-semibold leading-none tracking-tight",
+          variant === "light" ? "text-[#f6f3ea]" : "text-foreground",
         )}
       >
-        {siteName}
+        {segments.length === 2 ? (
+          <>
+            {segments[0]}{" "}
+            <span className={cn("font-normal italic", variant === "light" ? "text-[#d8a48f]" : "text-terracotta")}>
+              &
+            </span>{" "}
+            {segments[1]}
+          </>
+        ) : (
+          siteName
+        )}
       </span>
     </Link>
   );

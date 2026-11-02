@@ -6,10 +6,12 @@ export function SocialLinks({
   settings,
   className = "flex items-center gap-3",
   iconClass = "h-4 w-4",
+  variant = "default",
 }: {
   settings: SiteSettings;
   className?: string;
   iconClass?: string;
+  variant?: "default" | "light";
 }) {
   const links: { href: string; label: string; icon: React.ReactNode }[] = [];
   if (settings.pinterestUrl)
@@ -32,7 +34,11 @@ export function SocialLinks({
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`${l.label} (opens in a new tab)`}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:border-sage hover:text-sage-deep"
+          className={
+            variant === "light"
+              ? "flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/80 transition-colors hover:border-white/50 hover:bg-white/15 hover:text-white"
+              : "flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:border-sage hover:text-sage-deep"
+          }
         >
           {l.icon}
         </a>

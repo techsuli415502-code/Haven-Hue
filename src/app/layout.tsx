@@ -12,6 +12,7 @@ const inter = Inter({
 
 const fraunces = Fraunces({
   subsets: ["latin"],
+  style: ["normal", "italic"],
   variable: "--font-fraunces",
   display: "swap",
 });
@@ -51,8 +52,15 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
-      <body className={`${inter.variable} ${fraunces.variable} min-h-screen font-sans antialiased`}>
+    // Font variables live on <html> (not body) so the base-layer h1–h4 rule,
+    // which resolves --font-fraunces at :root scope, actually finds them.
+    <html
+      lang="en"
+      suppressHydrationWarning
+      data-scroll-behavior="smooth"
+      className={`${inter.variable} ${fraunces.variable}`}
+    >
+      <body className="min-h-screen font-sans antialiased">
         {children}
         <Toaster position="top-right" richColors closeButton />
       </body>

@@ -26,19 +26,25 @@ export default async function HomePage() {
     <>
       {/* ---------------- Hero ---------------- */}
       <section className="relative overflow-hidden bg-sand" aria-labelledby="hero-heading">
-        <div className="container-page grid items-center gap-10 py-14 lg:grid-cols-2 lg:gap-16 lg:py-24">
+        {/* ambient color washes */}
+        <div aria-hidden="true" className="hero-blob -left-24 top-4 h-80 w-80 bg-sage-soft" />
+        <div aria-hidden="true" className="hero-blob -right-16 bottom-0 h-96 w-96 bg-terracotta-soft" style={{ animationDelay: "-7s" }} />
+        <div className="container-page relative grid items-center gap-10 py-14 lg:grid-cols-2 lg:gap-16 lg:py-24">
           <div>
-            <p className="eyebrow mb-4 flex items-center gap-2">
+            <p className="eyebrow mb-4 flex items-center gap-2 animate-fade-up">
               <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
               Curated home decor finds
             </p>
-            <h1 id="hero-heading" className="text-balance text-4xl font-medium leading-[1.12] sm:text-5xl lg:text-[3.4rem]">
+            <h1
+              id="hero-heading"
+              className="animate-fade-up-delay-1 text-balance text-4xl font-medium leading-[1.12] sm:text-5xl lg:text-[3.4rem]"
+            >
               {settings.heroHeading}
             </h1>
-            <p className="mt-5 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">
+            <p className="animate-fade-up-delay-2 mt-5 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">
               {settings.heroSubheading}
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="animate-fade-up-delay-3 mt-8 flex flex-wrap gap-3">
               <Link href="/shop" className="btn-sage">
                 Shop Decor
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -48,7 +54,7 @@ export default async function HomePage() {
                 Explore Ideas
               </Link>
             </div>
-            <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
+            <p className="animate-fade-up-delay-3 mt-6 flex items-center gap-2 text-sm text-muted-foreground">
               <ThumbsUp className="h-4 w-4 text-sage" aria-hidden="true" />
               Hand-picked finds, styling ideas, and honest recommendations
             </p>
@@ -64,7 +70,7 @@ export default async function HomePage() {
                 sizes="(max-width: 1024px) 100vw, 50vw"
               />
             </div>
-            <div className="absolute -bottom-5 left-6 hidden items-center gap-3 rounded-2xl border border-border/70 bg-card px-5 py-3.5 shadow-lg sm:flex">
+            <div className="animate-float absolute -bottom-5 left-6 hidden items-center gap-3 rounded-2xl border border-border/70 bg-card px-5 py-3.5 shadow-lg sm:flex">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-sage-soft text-sage-deep">
                 <Sparkles className="h-4 w-4" aria-hidden="true" />
               </span>
@@ -94,7 +100,7 @@ export default async function HomePage() {
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="eyebrow mb-2">Shop by room & style</p>
-            <h2 id="categories-heading" className="text-3xl font-medium">
+            <h2 id="categories-heading" className="flourish text-3xl font-medium">
               Featured Categories
             </h2>
           </div>
@@ -122,7 +128,7 @@ export default async function HomePage() {
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="eyebrow mb-2">Loved & curated</p>
-              <h2 id="products-heading" className="text-3xl font-medium">
+              <h2 id="products-heading" className="flourish text-3xl font-medium">
                 Featured Decor Finds
               </h2>
             </div>
@@ -150,7 +156,7 @@ export default async function HomePage() {
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="eyebrow mb-2">Popular home decor ideas</p>
-            <h2 id="blog-heading" className="text-3xl font-medium">
+            <h2 id="blog-heading" className="flourish text-3xl font-medium">
               From the Blog
             </h2>
           </div>
