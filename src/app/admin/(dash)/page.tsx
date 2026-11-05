@@ -61,7 +61,7 @@ export default async function AdminDashboardPage() {
         <div className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-900" role="status">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <p>
-            <strong>Database not connected.</strong> You are logged in with environment credentials and can look
+            <strong>Database not connected.</strong> You are signed in with demo/setup credentials and can look
             around, but products, posts and settings cannot be read or saved yet. On Vercel: <strong>Storage →
             Create Database → Postgres → Connect</strong>, then redeploy — the catalog fills in automatically.
           </p>

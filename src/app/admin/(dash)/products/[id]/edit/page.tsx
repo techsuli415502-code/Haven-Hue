@@ -9,7 +9,14 @@ type Params = Promise<{ id: string }>;
 
 export default async function EditProductPage({ params }: { params: Params }) {
   const { id } = await params;
-  const product = await db.product.findUnique({ where: { id } });
+  // The database may not be connected yet (demo mode) — treat as not found
+  // instead of crashing the whole admin section.
+  let product: Awaited<ReturnType<typeof db.product.findUnique>> = null;
+  try {
+    product = await db.product.findUnique({ where: { id } });
+  } catch {
+    // Database not connected — handled by the notFound() below.
+  }
   if (!product) notFound();
 
   return (

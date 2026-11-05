@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { ProductForm, emptyProduct, DeleteProductButton } from "@/components/admin/product-form";
 import { parseList } from "@/lib/data";
@@ -6,8 +5,14 @@ import { parseList } from "@/lib/data";
 export const metadata = { title: "Add Product" };
 
 export default async function NewProductPage() {
-  const categories = await db.category.findMany({ orderBy: { sortOrder: "asc" } });
-  if (!categories) notFound();
+  // The database may not be connected yet (demo mode) — render the form with
+  // an empty category list instead of crashing.
+  let categories: Awaited<ReturnType<typeof db.category.findMany>> = [];
+  try {
+    categories = await db.category.findMany({ orderBy: { sortOrder: "asc" } });
+  } catch {
+    // Database not connected — the form still renders (saving will fail).
+  }
 
   return (
     <div className="mx-auto max-w-6xl">

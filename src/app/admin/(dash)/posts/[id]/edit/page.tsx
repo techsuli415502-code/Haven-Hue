@@ -9,7 +9,14 @@ type Params = Promise<{ id: string }>;
 
 export default async function EditPostPage({ params }: { params: Params }) {
   const { id } = await params;
-  const post = await db.post.findUnique({ where: { id } });
+  // The database may not be connected yet (demo mode) — treat as not found
+  // instead of crashing the whole admin section.
+  let post: Awaited<ReturnType<typeof db.post.findUnique>> = null;
+  try {
+    post = await db.post.findUnique({ where: { id } });
+  } catch {
+    // Database not connected — handled by the notFound() below.
+  }
   if (!post) notFound();
 
   return (
