@@ -54,6 +54,43 @@ function timingSafeEqualStr(a: string, b: string): boolean {
   return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
 }
 
+/**
+ * Last-resort demo owner account.
+ *
+ * On a fresh deployment with NEITHER a database NOR ADMIN_EMAIL/ADMIN_PASSWORD,
+ * the owner would be locked out of /admin entirely. In that exact state the
+ * dashboard is strictly view-only (every write needs a database and fails
+ * without one) and the site only serves bundled demo content, so a publicly
+ * documented demo pair is safe — there is nothing to protect yet. The moment
+ * ADMIN_EMAIL/ADMIN_PASSWORD are set or a database is connected, this path
+ * disappears automatically. Mirrored in src/app/admin/login/page.tsx.
+ */
+const DEMO_ADMIN = {
+  email: "admin@havenhue.com",
+  password: "HavenHue@2026",
+  name: "Demo Owner",
+} as const;
+
+/** True when neither env credentials nor a database can provide login. */
+export function isDemoFallbackActive(): boolean {
+  return !envAdminCredentials();
+}
+
+export async function verifyDemoAdmin(email: string, password: string): Promise<boolean> {
+  if (!isDemoFallbackActive()) return false;
+  const emailOk = timingSafeEqualStr(email.trim().toLowerCase(), DEMO_ADMIN.email);
+  const passwordOk = timingSafeEqualStr(password, DEMO_ADMIN.password);
+  return emailOk && passwordOk;
+}
+
+export function demoAdminInfo() {
+  return { email: DEMO_ADMIN.email, name: DEMO_ADMIN.name };
+}
+
+function demoSessionToken(): string {
+  return envSessionToken(DEMO_ADMIN.email);
+}
+
 /** Issue a database-free session cookie (used only when the DB is unavailable). */
 export async function createEnvSession(email: string): Promise<void> {
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
@@ -123,10 +160,15 @@ export async function getSessionUser(): Promise<AdminSessionUser | null> {
   // Database-free env session (only issued when the database is unavailable).
   if (token.startsWith(ENV_TOKEN_PREFIX)) {
     const creds = envAdminCredentials();
-    if (!creds) return null;
-    const expected = envSessionToken(creds.email);
-    if (timingSafeEqualStr(token, expected)) {
-      return { id: "env-admin", email: creds.email, name: creds.name };
+    if (creds) {
+      if (timingSafeEqualStr(token, envSessionToken(creds.email))) {
+        return { id: "env-admin", email: creds.email, name: creds.name };
+      }
+      return null;
+    }
+    // Demo fallback session (no env credentials configured at all).
+    if (isDemoFallbackActive() && timingSafeEqualStr(token, demoSessionToken())) {
+      return { id: "demo-admin", email: DEMO_ADMIN.email, name: DEMO_ADMIN.name };
     }
     return null;
   }

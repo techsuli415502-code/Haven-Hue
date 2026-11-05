@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { KeyRound, Loader2, Lock, ShieldCheck, TriangleAlert } from "lucide-react";
 import { LogoMark } from "@/components/site/logo-mark";
+
+// Mirrors DEMO_ADMIN in src/lib/auth.ts — only offered while the deployment
+// is in demo mode (no database, no ADMIN_* env vars), so it is public by design.
+const DEMO_LOGIN = { email: "admin@havenhue.com", password: "HavenHue@2026" };
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -13,6 +17,22 @@ export default function AdminLoginPage() {
   const [state, setState] = useState<"idle" | "loading">("idle");
   const [error, setError] = useState("");
   const [setupNeeded, setSetupNeeded] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
+
+  // When the deployment has neither a database nor ADMIN_* env vars, the
+  // demo owner account is available — pre-fill it so sign-in is one tap.
+  useEffect(() => {
+    fetch("/api/health")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.demoLogin) {
+          setDemoMode(true);
+          setEmail((current) => current || DEMO_LOGIN.email);
+          setPassword((current) => current || DEMO_LOGIN.password);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +76,18 @@ export default function AdminLoginPage() {
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_16px_48px_rgba(46,43,38,0.08)] sm:p-8">
+          {demoMode && (
+            <div className="mb-5 rounded-lg border border-sage/40 bg-sage/10 p-4">
+              <p className="text-sm font-semibold text-sage-deep">Demo mode active — ready to sign in</p>
+              <p className="mt-1 text-[13px] leading-5 text-muted-foreground">
+                No database is connected yet, so the demo owner account is pre-filled: just press{" "}
+                <span className="font-medium text-foreground">Sign in</span>. To use your own password, set{" "}
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">ADMIN_EMAIL</code>/{" "}
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">ADMIN_PASSWORD</code> in Vercel
+                (Settings → Environment Variables) and redeploy.
+              </p>
+            </div>
+          )}
           <form onSubmit={submit} className="space-y-4" noValidate>
             <div className="space-y-1.5">
               <label htmlFor="login-email" className="text-sm font-medium">

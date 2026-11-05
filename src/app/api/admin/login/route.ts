@@ -7,6 +7,8 @@ import {
   verifyEnvAdmin,
   createEnvSession,
   envAdminCredentials,
+  verifyDemoAdmin,
+  demoAdminInfo,
 } from "@/lib/auth";
 import { loginSchema } from "@/lib/validators";
 
@@ -69,19 +71,26 @@ export async function POST(req: Request) {
       return ok({ admin: { name: creds?.name ?? "Site Admin", email }, demoSession: true });
     }
 
-    // Distinguish the two failure modes so the owner is never misled:
-    if (!envAdminCredentials()) {
-      // No ADMIN_EMAIL / ADMIN_PASSWORD configured on this deployment at all.
+    // Last resort: demo owner account (only when no ADMIN_* env vars exist).
+    if (await verifyDemoAdmin(email, password)) {
+      await createEnvSession(email);
+      const demo = demoAdminInfo();
+      return ok({ admin: { name: demo.name, email: demo.email }, demoSession: true, demoAccount: true });
+    }
+
+    if (envAdminCredentials()) {
+      // Env credentials exist, but what was typed doesn't match them.
       return fail(
-        503,
-        "One-time setup needed: the database is not connected and no admin environment variables are configured on this deployment.",
-        { setupRequired: true },
+        401,
+        "Incorrect email or password. This deployment signs in with the ADMIN_EMAIL / ADMIN_PASSWORD environment variables — if you changed them in Vercel (Settings → Environment Variables) you must redeploy first, then sign in with those exact values.",
       );
     }
-    // Env credentials exist, but what was typed doesn't match them.
+
+    // Neither env credentials nor the demo pair matched.
     return fail(
       401,
-      "Incorrect email or password. This deployment signs in with the ADMIN_EMAIL / ADMIN_PASSWORD environment variables — if you changed them in Vercel (Settings → Environment Variables) you must redeploy first, then sign in with those exact values.",
+      "Incorrect email or password. This deployment is in demo mode (no database connected): use the demo owner account shown on this page, or set ADMIN_EMAIL / ADMIN_PASSWORD in Vercel and redeploy.",
+      { setupRequired: true },
     );
   }
 
